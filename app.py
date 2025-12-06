@@ -7,7 +7,7 @@ import re
 # Importa tu función de análisis (o simula si no tienes API)
 from ia.gemini import analizar_texto
 
-# --- Configuración de SQLite ---
+# --- Configuración de SQLite AHAHAHAHAHAHHA ---
 DB_PATH = "data/emotional.db"
 
 if not os.path.exists("data"):
