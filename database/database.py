@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 import os
-
+# database/database.py
 # --- Configuración ---
 DB_PATH = "data/emotional.db"
 

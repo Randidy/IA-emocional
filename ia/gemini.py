@@ -8,25 +8,44 @@ client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))
 
 def analizar_texto(texto):
     prompt = f"""
-Analiza este texto emocional:
+Responde como una persona real que está escuchando a alguien que necesita apoyo emocional.
+Habla con naturalidad, empatía y variedad. Nada robótico.
+
+Mensaje del usuario:
 '{texto}'
-Devuélveme:
-- emoción principal
-- nivel de estrés (0 al 100)
+
+Incluye también un pequeño análisis emocional:
+- emoción_principal
+- nivel_estres (0 a 100)
 - preocupaciones
-- recomendación breve para el estudiante
+- recomendacion
+
+Devuelve TODO en formato JSON:
+
+{{
+  "mensaje_chat": "respuesta cálida y natural",
+  "emocion_principal": "string",
+  "nivel_estres": numero,
+  "preocupaciones": "string",
+  "recomendacion": "string"
+}}
 """
 
-    # Llamada a Gemini API
-    response = client.models.generate_content(
-        model="models/gemini-2.5-flash",
-        contents=[prompt]  # lista de strings
-    )
+    try:
+        # Modelo correcto y compatible con tu API
+        response = client.models.generate_content(
+            model="models/gemini-2.0-flash-lite",
+            contents=[prompt]
+        )
 
-    # Forma correcta de obtener el texto
-    if hasattr(response, "text"):
-        return response.text.strip()
-    elif hasattr(response, "content"):
-        return response.content[0].text.strip()
-    else:
-        return str(response)
+        # Obtener texto (forma segura)
+        if hasattr(response, "text") and response.text:
+            return response.text.strip()
+
+        if hasattr(response, "content") and response.content:
+            return response.content[0].text.strip()
+
+        return "Error: respuesta vacía del modelo."
+
+    except Exception as e:
+        return f"Error procesando análisis: {e}"
