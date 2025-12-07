@@ -65,45 +65,54 @@ def pantalla_login():
 # ------------------------------
 def pantalla_estudiante():
     st.title("🧑‍🎓 Registro emocional del estudiante")
-
     usuario_id, nombre_u, email_u, rol_u = st.session_state.usuario
 
-    texto = st.text_area("¿Cómo te sientes hoy?")
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-    if st.button("Analizar y Guardar", use_container_width=True):
-        if texto.strip() != "":
-            resultado = analizar_texto(texto)
+    # Formulario para enviar mensajes y limpiar automáticamente
+    with st.form("chat_form", clear_on_submit=True):
+        texto = st.text_area("¿Cómo te sientes hoy?")
+        enviar = st.form_submit_button("Enviar")
 
-            # --- LIMPIEZA DE RESPUESTA GEMINI ---
-            try:
-                resultado_limpio = resultado.strip()
-                resultado_limpio = resultado_limpio.replace("```json", "").replace("```", "").strip()
+    if enviar and texto.strip() != "":
+        # Guardar mensaje del usuario
+        st.session_state.chat_history.append({"role": "user", "message": texto})
 
-                data = json.loads(resultado_limpio)
+        # Analizar texto con Gemini
+        resultado = analizar_texto(texto)
 
-                mensaje_chat = data.get("mensaje_chat", "")
-                emocion = data.get("emocion_principal", "")
-                estres = data.get("nivel_estres", 0)
-                recomendacion = data.get("recomendacion", "")
+        try:
+            resultado_limpio = resultado.replace("```json", "").replace("```", "").strip()
+            data = json.loads(resultado_limpio)
 
-            except Exception as e:
-                st.error("⚠️ Error interpretando la respuesta de la IA")
-                st.write(resultado)  # Para debugging
-                return
+            mensaje_chat = data.get("mensaje_chat", "")
+            emocion = data.get("emocion_principal", "")
+            estres = data.get("nivel_estres", 0)
+            recomendacion = data.get("recomendacion", "")
 
-            # Mostrar mensaje estilo chat
-            st.markdown("### 💬 Respuesta del sistema")
-            st.info(mensaje_chat)
+        except Exception as e:
+            st.error("⚠️ Error interpretando la respuesta de la IA")
+            st.write(resultado)
+            return
 
-            guardar_entrada(texto, emocion, estres, recomendacion, usuario_id)
-            st.success("✅ Entrada guardada correctamente")
+        # Guardar respuesta del bot
+        st.session_state.chat_history.append({"role": "bot", "message": mensaje_chat})
+
+        # Guardar en base de datos
+        guardar_entrada(texto, emocion, estres, recomendacion, usuario_id)
+
+    # Mostrar toda la conversación
+    for chat in st.session_state.chat_history:
+        if chat["role"] == "user":
+            st.markdown(f"**Tú:** {chat['message']}")
         else:
-            st.error("Escribe algo antes de analizar")
+            st.markdown(f"**Sistema:** {chat['message']}")
 
     if st.button("Cerrar sesión", use_container_width=True):
         st.session_state.page = "login"
+        st.session_state.chat_history = []
         st.rerun()
-
 
 # ------------------------------
 # 🟪 PANTALLA: PSICÓLOGO
