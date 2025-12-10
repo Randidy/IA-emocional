@@ -50,14 +50,24 @@ def pantalla_login():
     email = st.text_input("Email")
 
     if st.button("Ingresar", use_container_width=True):
-        if nombre.strip() != "" and email.strip() != "":
-            usuario_id = registrar_usuario(nombre, email, rol)
-            st.session_state.usuario = (usuario_id, nombre, email, rol)
 
-            st.session_state.page = "estudiante" if rol == "Estudiante" else "psicologo"
-            st.rerun()
-        else:
-            st.error("Por favor ingresa tu nombre y email")
+        # VALIDACIÓN MEJORADA (COMMIT 1)
+        if len(nombre.strip()) < 3:
+            st.warning("⚠️ El nombre debe tener al menos 3 caracteres.")
+            return
+
+        patron_email = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(patron_email, email):
+            st.warning("⚠️ Ingresa un correo válido (ejemplo: usuario@correo.com).")
+            return
+
+        # Si pasa validaciones
+        usuario_id = registrar_usuario(nombre, email, rol)
+        st.session_state.usuario = (usuario_id, nombre, email, rol)
+
+        st.session_state.page = "estudiante" if rol == "Estudiante" else "psicologo"
+        st.rerun()
+
 
 
 # ------------------------------
@@ -114,6 +124,8 @@ def pantalla_estudiante():
         st.session_state.chat_history = []
         st.rerun()
 
+
+
 # ------------------------------
 # 🟪 PANTALLA: PSICÓLOGO
 # ------------------------------
@@ -136,6 +148,7 @@ def pantalla_psicologo():
     if st.button("Cerrar sesión", use_container_width=True):
         st.session_state.page = "login"
         st.rerun()
+
 
 
 # ------------------------------
