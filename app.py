@@ -59,7 +59,8 @@ def pantalla_login():
             st.warning("⚠️ El nombre debe tener al menos 3 caracteres.")
             return
 
-        patron_email = r"^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
+        # REGEX CORREGIDO
+        patron_email = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         if not re.match(patron_email, email):
             st.warning("⚠️ Ingresa un correo válido (ejemplo: usuario@correo.com).")
             return
@@ -87,10 +88,8 @@ def pantalla_estudiante():
         enviar = st.form_submit_button("Enviar")
 
     if enviar and texto.strip() != "":
-        # Guardar mensaje del usuario
         st.session_state.chat_history.append({"role": "user", "message": texto})
 
-        # Analizar texto con Gemini
         resultado = analizar_texto(texto)
 
         try:
@@ -107,13 +106,11 @@ def pantalla_estudiante():
             st.write(resultado)
             return
 
-        # Guardar respuesta del bot
         st.session_state.chat_history.append({"role": "bot", "message": mensaje_chat})
 
-        # Guardar en base de datos
         guardar_entrada(texto, emocion, estres, recomendacion, usuario_id)
 
-    # Mostrar la conversación
+    # Mostrar conversación
     for chat in st.session_state.chat_history:
         if chat["role"] == "user":
             st.markdown(f"**Tú:** {chat['message']}")
@@ -158,7 +155,7 @@ def pantalla_psicologo():
         return
 
     # ------------------------------------------------------------
-    # 🔥 AGREGACIÓN POR FECHA (MEJORA QUE PEDISTE)
+    #  AGREGACIÓN POR FECHA
     # ------------------------------------------------------------
     historial_por_fecha = {}
 
