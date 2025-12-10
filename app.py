@@ -20,9 +20,10 @@ if "page" not in st.session_state:
 if "confirm_logout" not in st.session_state:
     st.session_state.confirm_logout = False
 
-# ------------------------------
+
+# --------------------------------
 # 🎨 ESTILOS PERSONALIZADOS
-# ------------------------------
+# --------------------------------
 st.markdown("""
     <style>
     body {
@@ -40,9 +41,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ------------------------------
+# --------------------------------
 # 🟦 PANTALLA: LOGIN
-# ------------------------------
+# --------------------------------
 def pantalla_login():
     st.title("🧠 Bienestar Emocional Estudiantil")
     st.subheader("🔑 Iniciar sesión")
@@ -53,7 +54,7 @@ def pantalla_login():
 
     if st.button("Ingresar", use_container_width=True):
 
-        # VALIDACIÓN MEJORADA (COMMIT 1)
+        # VALIDACIÓN MEJORADA
         if len(nombre.strip()) < 3:
             st.warning("⚠️ El nombre debe tener al menos 3 caracteres.")
             return
@@ -63,7 +64,7 @@ def pantalla_login():
             st.warning("⚠️ Ingresa un correo válido (ejemplo: usuario@correo.com).")
             return
 
-        # Si pasa validaciones
+        # Registrar usuario
         usuario_id = registrar_usuario(nombre, email, rol)
         st.session_state.usuario = (usuario_id, nombre, email, rol)
 
@@ -71,10 +72,9 @@ def pantalla_login():
         st.rerun()
 
 
-
-# ------------------------------
+# --------------------------------
 # 🟩 PANTALLA: ESTUDIANTE
-# ------------------------------
+# --------------------------------
 def pantalla_estudiante():
     st.title("🧑‍🎓 Registro emocional del estudiante")
     usuario_id, nombre_u, email_u, rol_u = st.session_state.usuario
@@ -82,7 +82,6 @@ def pantalla_estudiante():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Formulario para enviar mensajes y limpiar automáticamente
     with st.form("chat_form", clear_on_submit=True):
         texto = st.text_area("¿Cómo te sientes hoy?")
         enviar = st.form_submit_button("Enviar")
@@ -103,7 +102,7 @@ def pantalla_estudiante():
             estres = data.get("nivel_estres", 0)
             recomendacion = data.get("recomendacion", "")
 
-        except Exception as e:
+        except Exception:
             st.error("⚠️ Error interpretando la respuesta de la IA")
             st.write(resultado)
             return
@@ -114,7 +113,7 @@ def pantalla_estudiante():
         # Guardar en base de datos
         guardar_entrada(texto, emocion, estres, recomendacion, usuario_id)
 
-    # Mostrar toda la conversación
+    # Mostrar la conversación
     for chat in st.session_state.chat_history:
         if chat["role"] == "user":
             st.markdown(f"**Tú:** {chat['message']}")
@@ -122,7 +121,7 @@ def pantalla_estudiante():
             st.markdown(f"**Sistema:** {chat['message']}")
 
     # ------------------------------
-    # CONFIRMACIÓN DE CIERRE DE SESIÓN
+    # CONFIRMACIÓN CIERRE SESIÓN
     # ------------------------------
     if st.button("Cerrar sesión", use_container_width=True):
         st.session_state.confirm_logout = True
@@ -130,43 +129,62 @@ def pantalla_estudiante():
     if st.session_state.confirm_logout:
         with st.modal("¿Deseas cerrar sesión?"):
             st.write("Tu sesión actual se cerrará.")
-            col1, col2 = st.columns(2)
+            c1, c2 = st.columns(2)
 
-            with col1:
+            with c1:
                 if st.button("Sí, cerrar"):
                     st.session_state.page = "login"
                     st.session_state.chat_history = []
                     st.session_state.confirm_logout = False
                     st.rerun()
 
-            with col2:
+            with c2:
                 if st.button("Cancelar"):
                     st.session_state.confirm_logout = False
                     st.rerun()
 
 
-
-# ------------------------------
+# --------------------------------
 # 🟪 PANTALLA: PSICÓLOGO
-# ------------------------------
+# --------------------------------
 def pantalla_psicologo():
     st.title("🧑‍⚕️ Panel del Psicólogo")
-    st.write("### 🗂️ Historial de entradas:")
+    st.write("### 🗂️ Historial agrupado por fecha:")
 
     entradas = obtener_entradas()
 
-    if entradas:
-        for fecha, texto, emo, est, rec, uid in entradas:
-            with st.expander(f"📅 {fecha} — Usuario ID {uid}"):
+    if not entradas:
+        st.info("No hay entradas aún.")
+        return
+
+    # ------------------------------------------------------------
+    # 🔥 AGREGACIÓN POR FECHA (MEJORA QUE PEDISTE)
+    # ------------------------------------------------------------
+    historial_por_fecha = {}
+
+    for fecha, texto, emo, est, rec, uid in entradas:
+        fecha_simple = fecha.split(" ")[0]  # yyyy-mm-dd
+
+        if fecha_simple not in historial_por_fecha:
+            historial_por_fecha[fecha_simple] = []
+
+        historial_por_fecha[fecha_simple].append(
+            (texto, emo, est, rec, uid)
+        )
+
+    # Mostrar agrupado
+    for fecha, items in historial_por_fecha.items():
+        with st.expander(f"📅 Fecha: {fecha}"):
+            for texto, emo, est, rec, uid in items:
+                st.write(f"**Usuario ID:** {uid}")
                 st.write(f"**Texto:** {texto}")
                 st.write(f"**Emoción:** {emo}")
-                st.write(f"**Nivel de estrés:** {est}/100")
+                st.write(f"**Estrés:** {est}/100")
                 st.write(f"**Recomendación:** {rec}")
-    else:
-        st.info("No hay entradas registradas todavía.")
+                st.write("---")
 
     # ------------------------------
-    # CONFIRMACIÓN DE CIERRE DE SESIÓN
+    # CONFIRMACIÓN CIERRE SESIÓN
     # ------------------------------
     if st.button("Cerrar sesión", use_container_width=True):
         st.session_state.confirm_logout = True
@@ -174,24 +192,23 @@ def pantalla_psicologo():
     if st.session_state.confirm_logout:
         with st.modal("¿Deseas cerrar sesión?"):
             st.write("Tu sesión actual se cerrará.")
-            col1, col2 = st.columns(2)
+            c1, c2 = st.columns(2)
 
-            with col1:
+            with c1:
                 if st.button("Sí, cerrar"):
                     st.session_state.page = "login"
                     st.session_state.confirm_logout = False
                     st.rerun()
 
-            with col2:
+            with c2:
                 if st.button("Cancelar"):
                     st.session_state.confirm_logout = False
                     st.rerun()
 
 
-
-# ------------------------------
+# --------------------------------
 # CONTROLADOR DE PANTALLAS
-# ------------------------------
+# --------------------------------
 if st.session_state.page == "login":
     pantalla_login()
 
