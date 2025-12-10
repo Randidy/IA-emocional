@@ -17,6 +17,8 @@ crear_tablas()
 if "page" not in st.session_state:
     st.session_state.page = "login"
 
+if "confirm_logout" not in st.session_state:
+    st.session_state.confirm_logout = False
 
 # ------------------------------
 # 🎨 ESTILOS PERSONALIZADOS
@@ -119,10 +121,28 @@ def pantalla_estudiante():
         else:
             st.markdown(f"**Sistema:** {chat['message']}")
 
+    # ------------------------------
+    # CONFIRMACIÓN DE CIERRE DE SESIÓN
+    # ------------------------------
     if st.button("Cerrar sesión", use_container_width=True):
-        st.session_state.page = "login"
-        st.session_state.chat_history = []
-        st.rerun()
+        st.session_state.confirm_logout = True
+
+    if st.session_state.confirm_logout:
+        with st.modal("¿Deseas cerrar sesión?"):
+            st.write("Tu sesión actual se cerrará.")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("Sí, cerrar"):
+                    st.session_state.page = "login"
+                    st.session_state.chat_history = []
+                    st.session_state.confirm_logout = False
+                    st.rerun()
+
+            with col2:
+                if st.button("Cancelar"):
+                    st.session_state.confirm_logout = False
+                    st.rerun()
 
 
 
@@ -135,9 +155,6 @@ def pantalla_psicologo():
 
     entradas = obtener_entradas()
 
-    # ordenar por fecha descendente
-    entradas = sorted(entradas, key=lambda x: x[0], reverse=True)
-
     if entradas:
         for fecha, texto, emo, est, rec, uid in entradas:
             with st.expander(f"📅 {fecha} — Usuario ID {uid}"):
@@ -148,9 +165,27 @@ def pantalla_psicologo():
     else:
         st.info("No hay entradas registradas todavía.")
 
+    # ------------------------------
+    # CONFIRMACIÓN DE CIERRE DE SESIÓN
+    # ------------------------------
     if st.button("Cerrar sesión", use_container_width=True):
-        st.session_state.page = "login"
-        st.rerun()
+        st.session_state.confirm_logout = True
+
+    if st.session_state.confirm_logout:
+        with st.modal("¿Deseas cerrar sesión?"):
+            st.write("Tu sesión actual se cerrará.")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("Sí, cerrar"):
+                    st.session_state.page = "login"
+                    st.session_state.confirm_logout = False
+                    st.rerun()
+
+            with col2:
+                if st.button("Cancelar"):
+                    st.session_state.confirm_logout = False
+                    st.rerun()
 
 
 
