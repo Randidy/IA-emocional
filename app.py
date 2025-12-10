@@ -56,7 +56,7 @@ def pantalla_login():
             st.warning("⚠️ El nombre debe tener al menos 3 caracteres.")
             return
 
-        patron_email = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        patron_email = r"^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
         if not re.match(patron_email, email):
             st.warning("⚠️ Ingresa un correo válido (ejemplo: usuario@correo.com).")
             return
@@ -134,6 +134,9 @@ def pantalla_psicologo():
     st.write("### 🗂️ Historial de entradas:")
 
     entradas = obtener_entradas()
+
+    # ordenar por fecha descendente
+    entradas = sorted(entradas, key=lambda x: x[0], reverse=True)
 
     if entradas:
         for fecha, texto, emo, est, rec, uid in entradas:
