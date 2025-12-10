@@ -54,9 +54,22 @@ st.markdown("""
         background: white;
         padding: 25px;
         border-radius: 12px;
-        width: 340px;
-        box-shadow: 0px 4px 30px rgba(0,0,0,0.25);
+        width: 360px;
+        box-shadow: 0px 4px 30px rgba(0,0,0,0.30);
         text-align: center;
+        color: #1a1a1a;
+    }
+
+    .modal-box h4 {
+        font-size: 20px;
+        margin-bottom: 8px;
+        font-weight: 700;
+        color: #000000;
+    }
+
+    .modal-box p {
+        font-size: 15px;
+        color: #444444;
     }
     </style>
 """, unsafe_allow_html=True)
