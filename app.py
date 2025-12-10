@@ -58,14 +58,6 @@ st.markdown("""
         box-shadow: 0px 4px 30px rgba(0,0,0,0.25);
         text-align: center;
     }
-
-    .modal-btn {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        margin-top: 10px;
-        font-weight: bold;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -83,13 +75,14 @@ def pantalla_login():
 
     if st.button("Ingresar", use_container_width=True):
 
-        # VALIDACIÓN
+        # VALIDACIÓN: nombre
         if len(nombre.strip()) < 3:
             st.warning("⚠️ El nombre debe tener al menos 3 caracteres.")
             return
 
-        patron_email = r"^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
-        if not re.match(r"^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$".replace("\\", ""), email):
+        # VALIDACIÓN: email correcto
+        patron_email = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(patron_email, email):
             st.warning("⚠️ Ingresa un correo válido (ejemplo: usuario@correo.com).")
             return
 
@@ -210,7 +203,6 @@ def pantalla_psicologo():
                 st.write(f"**Recomendación:** {rec}")
                 st.write("---")
 
-    # Cerrar sesión
     if st.button("Cerrar sesión", use_container_width=True):
         st.session_state.confirm_logout = True
 
@@ -219,13 +211,11 @@ def pantalla_psicologo():
 
 
 # --------------------------------
-# CONTROLADOR
+# CONTROLADOR PRINCIPAL
 # --------------------------------
 if st.session_state.page == "login":
     pantalla_login()
-
 elif st.session_state.page == "estudiante":
     pantalla_estudiante()
-
 elif st.session_state.page == "psicologo":
     pantalla_psicologo()
