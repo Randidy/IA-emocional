@@ -2,6 +2,7 @@ import streamlit as st
 import re
 import json
 
+# Asegúrate de tener estas librerías instaladas y tus archivos en la ruta correcta
 from ia.gemini import analizar_texto
 from database.database import (
     crear_tablas,
@@ -10,69 +11,51 @@ from database.database import (
     obtener_entradas
 )
 
-# Crear tablas
+# Crear tablas al inicio
 crear_tablas()
 
 # Inicializar estado de página
 if "page" not in st.session_state:
     st.session_state.page = "login"
 
-if "confirm_logout" not in st.session_state:
-    st.session_state.confirm_logout = False
-
-
 # --------------------------------
-# 🎨 ESTILOS PERSONALIZADOS + MODAL
+# 🎨 ESTILOS PERSONALIZADOS
 # --------------------------------
 st.markdown("""
     <style>
     body {
         background-color: white;
     }
-
     .main {
         padding: 30px;
         border-radius: 20px;
         background: #ffffff;
     }
-
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.55);
-        backdrop-filter: blur(3px);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-
-    .modal-box {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        width: 360px;
-        box-shadow: 0px 4px 30px rgba(0,0,0,0.30);
-        text-align: center;
-        color: #1a1a1a;
-    }
-
-    .modal-box h4 {
-        font-size: 20px;
-        margin-bottom: 8px;
-        font-weight: 700;
-        color: #000000;
-    }
-
-    .modal-box p {
-        font-size: 15px;
-        color: #444444;
-    }
+    /* El CSS del modal antiguo se eliminó para usar el nativo de Streamlit */
     </style>
 """, unsafe_allow_html=True)
+
+
+# --------------------------------
+# 🚪 FUNCION MODAL (NATIVA)
+# --------------------------------
+@st.dialog("Confirmación")
+def modal_cerrar_sesion():
+    st.write("¿Estás seguro que deseas cerrar sesión?")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Sí, salir", type="primary", use_container_width=True):
+            st.session_state.page = "login"
+            st.session_state.usuario = None
+            if "chat_history" in st.session_state:
+                st.session_state.chat_history = []
+            st.rerun()
+
+    with col2:
+        if st.button("Cancelar", use_container_width=True):
+            st.rerun()
 
 
 # --------------------------------
@@ -107,39 +90,16 @@ def pantalla_login():
 
 
 # --------------------------------
-# 📗 FUNCION MODAL PERSONALIZADO
-# --------------------------------
-def modal_confirmacion():
-    st.markdown("""
-        <div class="modal-overlay">
-            <div class="modal-box">
-                <h4>¿Deseas cerrar sesión?</h4>
-                <p>Tu sesión actual se cerrará.</p>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("Sí, cerrar", key="cerrar_sesion_si"):
-            st.session_state.page = "login"
-            st.session_state.confirm_logout = False
-            if "chat_history" in st.session_state:
-                st.session_state.chat_history = []
-            st.rerun()
-
-    with col2:
-        if st.button("Cancelar", key="cerrar_sesion_no"):
-            st.session_state.confirm_logout = False
-            st.rerun()
-
-
-# --------------------------------
 # 🟩 PANTALLA ESTUDIANTE
 # --------------------------------
 def pantalla_estudiante():
     st.title("🧑‍🎓 Registro emocional del estudiante")
+
+    # Verificar sesión
+    if "usuario" not in st.session_state or st.session_state.usuario is None:
+        st.session_state.page = "login"
+        st.rerun()
+
     usuario_id, nombre_u, email_u, rol_u = st.session_state.usuario
 
     if "chat_history" not in st.session_state:
@@ -158,7 +118,6 @@ def pantalla_estudiante():
             data = json.loads(resultado.replace("```json", "").replace("```", "").strip())
         except:
             st.error("⚠️ Error interpretando la respuesta de la IA")
-            st.write(resultado)
             return
 
         mensaje_chat = data.get("mensaje_chat", "")
@@ -177,12 +136,11 @@ def pantalla_estudiante():
         else:
             st.markdown(f"**Sistema:** {chat['message']}")
 
-    # Botón cerrar
-    if st.button("Cerrar sesión", use_container_width=True):
-        st.session_state.confirm_logout = True
+    st.write("---")
 
-    if st.session_state.confirm_logout:
-        modal_confirmacion()
+    # Botón cerrar sesión con Modal
+    if st.button("Cerrar sesión", use_container_width=True):
+        modal_cerrar_sesion()
 
 
 # --------------------------------
@@ -190,37 +148,42 @@ def pantalla_estudiante():
 # --------------------------------
 def pantalla_psicologo():
     st.title("🧑‍⚕️ Panel del Psicólogo")
+
+    # Verificar sesión
+    if "usuario" not in st.session_state or st.session_state.usuario is None:
+        st.session_state.page = "login"
+        st.rerun()
+
     st.write("### 🗂️ Historial agrupado por fecha:")
 
     entradas = obtener_entradas()
 
     if not entradas:
         st.info("No hay entradas aún.")
-        return
+    else:
+        historial_por_fecha = {}
 
-    historial_por_fecha = {}
+        for fecha, texto, emo, est, rec, uid in entradas:
+            fecha_simple = fecha.split(" ")[0]
+            historial_por_fecha.setdefault(fecha_simple, []).append(
+                (texto, emo, est, rec, uid)
+            )
 
-    for fecha, texto, emo, est, rec, uid in entradas:
-        fecha_simple = fecha.split(" ")[0]
-        historial_por_fecha.setdefault(fecha_simple, []).append(
-            (texto, emo, est, rec, uid)
-        )
+        for fecha, items in historial_por_fecha.items():
+            with st.expander(f"📅 Fecha: {fecha}"):
+                for texto, emo, est, rec, uid in items:
+                    st.write(f"**Usuario ID:** {uid}")
+                    st.write(f"**Texto:** {texto}")
+                    st.write(f"**Emoción:** {emo}")
+                    st.write(f"**Estrés:** {est}/100")
+                    st.write(f"**Recomendación:** {rec}")
+                    st.write("---")
 
-    for fecha, items in historial_por_fecha.items():
-        with st.expander(f"📅 Fecha: {fecha}"):
-            for texto, emo, est, rec, uid in items:
-                st.write(f"**Usuario ID:** {uid}")
-                st.write(f"**Texto:** {texto}")
-                st.write(f"**Emoción:** {emo}")
-                st.write(f"**Estrés:** {est}/100")
-                st.write(f"**Recomendación:** {rec}")
-                st.write("---")
+    st.write("---")
 
+    # Botón cerrar sesión con Modal
     if st.button("Cerrar sesión", use_container_width=True):
-        st.session_state.confirm_logout = True
-
-    if st.session_state.confirm_logout:
-        modal_confirmacion()
+        modal_cerrar_sesion()
 
 
 # --------------------------------
