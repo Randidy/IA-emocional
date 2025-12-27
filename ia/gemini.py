@@ -1,33 +1,22 @@
-# ia/gemini.py
 from google import genai
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))
 
-def analizar_texto(texto, max_tokens=150):
-    """
-    Analiza el texto como un chatbot de apoyo emocional.
-    Se indica dentro del prompt para limitar la longitud de la respuesta.
-    """
+def analizar_texto(texto):
     prompt = f"""
-Responde como una persona real que está escuchando a alguien que necesita apoyo emocional.
-Habla con naturalidad, empatía y variedad. Nada robótico.
-Limita tu respuesta a aproximadamente {max_tokens} tokens.
+Responde como una persona real que brinda apoyo emocional.
+Habla con empatía, cercanía y naturalidad.
 
 Mensaje del usuario:
-'{texto}'
+"{texto}"
 
-Incluye también un pequeño análisis emocional:
-- emocion_principal
-- nivel_estres (0 a 100)
-- preocupaciones
-- recomendacion
-
-Devuelve TODO en formato JSON:
+Devuelve SOLO JSON:
 {{
-  "mensaje_chat": "respuesta cálida y natural",
+  "mensaje_chat": "respuesta empática",
   "emocion_principal": "string",
   "nivel_estres": numero,
   "preocupaciones": "string",
@@ -35,25 +24,9 @@ Devuelve TODO en formato JSON:
 }}
 """
 
-    try:
-        # Llamada al modelo (sin max_output_tokens, solo control por prompt)
-        response = client.models.generate_content(
-            model="models/gemini-2.5-flash",
-            contents=[prompt]
-        )
+    response = client.models.generate_content(
+        model="models/gemini-2.5-flash",
+        contents=[prompt]
+    )
 
-        # Obtener el texto de forma segura
-        if hasattr(response, "text") and response.text:
-            return response.text.strip()
-        if hasattr(response, "content") and response.content:
-            return response.content[0].text.strip()
-
-        return "Error: respuesta vacía del modelo."
-
-    except Exception as e:
-        error_msg = str(e)
-        if "RESOURCE_EXHAUSTED" in error_msg:
-            return "Error: cuota agotada. Espera o usa otra clave."
-        if "NOT_FOUND" in error_msg:
-            return "Error: modelo no disponible. Revisa nombre del modelo."
-        return f"Error procesando análisis: {e}"
+    return response.text.strip()
