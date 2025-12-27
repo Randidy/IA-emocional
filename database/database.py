@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 import os
-# database/database.py
+
 # --- Configuración ---
 DB_PATH = "data/emotional.db"
 
@@ -19,17 +19,18 @@ def crear_tablas():
     conn = conectar()
     cursor = conn.cursor()
 
-    # Tabla usuarios
+    # Tabla usuarios (CON APELLIDO)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT,
+            apellido TEXT,
             email TEXT UNIQUE,
             rol TEXT
         )
     """)
 
-    # Tabla entradas SIN user_id (por si existe vieja)
+    # Tabla entradas
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS entradas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,29 +38,25 @@ def crear_tablas():
             texto TEXT,
             emocion TEXT,
             estres INTEGER,
-            recomendacion TEXT
+            recomendacion TEXT,
+            user_id INTEGER,
+            FOREIGN KEY(user_id) REFERENCES usuarios(id)
         )
     """)
-
-    # Agregar user_id si no existe
-    try:
-        cursor.execute("ALTER TABLE entradas ADD COLUMN user_id INTEGER")
-    except sqlite3.OperationalError:
-        pass  # Ya existe
 
     conn.commit()
     conn.close()
 
 
 # --- Registrar usuario ---
-def registrar_usuario(nombre, email, rol):
+def registrar_usuario(nombre, apellido, email, rol):
     conn = conectar()
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT OR IGNORE INTO usuarios (nombre, email, rol)
-        VALUES (?, ?, ?)
-    """, (nombre, email, rol))
+        INSERT OR IGNORE INTO usuarios (nombre, apellido, email, rol)
+        VALUES (?, ?, ?, ?)
+    """, (nombre, apellido, email, rol))
 
     conn.commit()
 
@@ -78,31 +75,38 @@ def guardar_entrada(texto, emocion, estres, recomendacion, user_id):
     cursor.execute("""
         INSERT INTO entradas (fecha, texto, emocion, estres, recomendacion, user_id)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-          texto, emocion, estres, recomendacion, user_id))
+    """, (
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        texto,
+        emocion,
+        estres,
+        recomendacion,
+        user_id
+    ))
 
     conn.commit()
     conn.close()
 
 
-# --- Obtener entradas ---
-def obtener_entradas(user_id=None):
+# --- Obtener entradas (CON NOMBRE Y APELLIDO) ---
+def obtener_entradas():
     conn = conectar()
     cursor = conn.cursor()
 
-    if user_id:
-        cursor.execute("""
-            SELECT fecha, texto, emocion, estres, recomendacion
-            FROM entradas
-            WHERE user_id=?
-            ORDER BY id DESC
-        """, (user_id,))
-    else:
-        cursor.execute("""
-            SELECT fecha, texto, emocion, estres, recomendacion, user_id
-            FROM entradas
-            ORDER BY id DESC
-        """)
+    cursor.execute("""
+        SELECT 
+            e.fecha,
+            e.texto,
+            e.emocion,
+            e.estres,
+            e.recomendacion,
+            u.nombre,
+            u.apellido,
+            u.email
+        FROM entradas e
+        JOIN usuarios u ON e.user_id = u.id
+        ORDER BY e.id DESC
+    """)
 
     datos = cursor.fetchall()
     conn.close()
