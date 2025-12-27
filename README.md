@@ -16,3 +16,7 @@ Escriba el siguiente comando en la terminal para crear un espacio aislado para e
 
 ```bash
 python -m venv venv
+
+
+⚡ PASO 3: Activar el Entorno
+Es fundamental activar el entorno antes de instalar nada. Ejecute:
